@@ -284,7 +284,7 @@ cmd() {
         ps_top5_mem "ps --sort=-%mem -eo user,pid,ppid,state,comm | head -n6"
         ps_zombie "ps -eo user,pid,ppid,state,comm | awk '\$4=="Z" {print \$3}'"
         cron_add_task '{ crontab -l; echo "0 3 * * 0 ls -l &> dirs.txt"; } | crontab -'
-        du_top20 'du -h / 2> /dev/null | sort -rh | head -n 20'
+        du_top20 'du -x -h / 2> /dev/null | sort -rh | head -n 20'
         df_80 "df -h | awk '\$5 ~ /^8[0-9]%/ {print $6}'"
         git_init 'git init --initial-branch=main && git remote add origin ssh://git@github.com/r4ven-me/reponame.git'
         journal_vacuum 'journalctl --vacuum-size=800M'
