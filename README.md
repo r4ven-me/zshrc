@@ -6,6 +6,8 @@ This repo showcases my **Zsh** shell configuration, built with the **Oh-My-Zsh**
 ---
 ## Demo
 
+![](https://r4ven.me/dots/tonkaya-nastrojka-zshrc-pri-ispolzovanii-oh-my-zsh/attachments/r4ven-me-2024-12-25-tonkaya-nastrojka-zshrc-pri-ispolzovanii-oh-my-zsh-1.gif)
+
 ```bash
 Tab
 ```
@@ -131,7 +133,7 @@ sudo apt update && sudo apt install -y git curl zsh
 sudo apt install -y bat exa fzf grc || sudo apt install -y bat eza fzf grc
 
 # backup existing .zshrc
-[[ -f ~/.zshrc ]] && mv ~/.zshrc{,_backup}
+[[ -f ~/.zshrc ]] && mv -v ~/.zshrc{,_backup}
 
 # download ready .zshrc
 curl -fsSL --output ~/.zshrc \
