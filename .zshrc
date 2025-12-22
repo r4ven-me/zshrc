@@ -188,16 +188,16 @@ if have "batcat"; then cmd_alias "bat" "batcat"; fi
 if have "bat"; then
     export COLORTERM="truecolor"
     export BAT_THEME="Nord"
-    export MANPAGER="sh -c 'col -bx | $bat --language=man --style=plain'"  # Command to view man pages
+    export MANPAGER="sh -c 'col -bx | bat --language=man --style=plain'"  # Command to view man pages
     export MANROFFOPT="-c"  # Disabling line wrapping in man
-    cmd_alias "cat" "$bat" "--style=plain" "--paging=never"
-    cmd_alias "less" "$bat" "--paging=always"
+    cmd_alias "cat" "bat" "--style=plain" "--paging=never"
+    cmd_alias "less" "bat" "--paging=always"
     if [[ $SHELL == *zsh ]]; then # global alias "--help" if zsh
-        alias -g -- --help='--help 2>&1 | $bat --language=help --style=plain'
+        alias -g -- --help='--help 2>&1 | bat --language=help --style=plain'
     fi
-    help() { "$@" --help 2>&1 | $bat --language=help --style=plain; }
-    tailf() { tail -f "$@" | $bat --paging=never --language=log; }
-    batdiff() { git diff --name-only --relative --diff-filter=d | xargs $bat --diff; }
+    help() { "$@" --help 2>&1 | bat --language=help --style=plain; }
+    tailf() { tail -f "$@" | bat --paging=never --language=log; }
+    batdiff() { git diff --name-only --relative --diff-filter=d | xargs bat --diff; }
 fi
 
 # Usage exa instead of ls
@@ -232,7 +232,9 @@ if have "grc" && tty -s && [[ -n "$TERM" && "$TERM" != dumb ]]; then
         #ls ip
     )
     for cmd in "${GRC_UTILS[@]}"; do
-        cmd_alias "$cmd" "grc" "--stderr" "--stdout" "$cmd"
+        if have "$cmd"; then
+            cmd_alias "$cmd" "grc" "--stderr" "--stdout" "$cmd"
+        fi
     done
 fi
 
