@@ -224,6 +224,6 @@ short_name "long_command"
 
 **SHELL PROMPT**👋
 
-The display of `user@host` is removed from the shell prompt if a [graphical environment](https://r4ven.me/it-razdel/slovarik/okruzhenie-rabochego-stola/) is used.
+The display of `user@host` is removed from the shell prompt if a graphical environment is used.
  </details>
  
