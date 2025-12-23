@@ -181,23 +181,24 @@ if have "fzf"; then
 fi
 
 # Defining a variable with the name of the utility: bat or batcat
-if have "batcat"; then cmd_alias "bat" "batcat"; fi
+# if have "batcat"; then cmd_alias "bat" "batcat"; fi
+if have "batcat"; then bat="batcat"; else bat="bat" fi
 
 # Usage bat instead of cat, less, man, --help, tail -f
 # See more: https://r4ven.me/bat-exa-config
-if have "bat"; then
+if have "$bat"; then
     export COLORTERM="truecolor"
     export BAT_THEME="Nord"
-    export MANPAGER="sh -c 'col -bx | bat --language=man --style=plain'"  # Command to view man pages
+    export MANPAGER="sh -c 'col -bx | $bat --language=man --style=plain'"  # Command to view man pages
     export MANROFFOPT="-c"  # Disabling line wrapping in man
-    cmd_alias "cat" "bat" "--style=plain" "--paging=never"
-    cmd_alias "less" "bat" "--paging=always"
+    cmd_alias "cat" "$bat" "--style=plain" "--paging=never"
+    cmd_alias "less" "$bat" "--paging=always"
     if [[ $SHELL == *zsh ]]; then # global alias "--help" if zsh
-        alias -g -- --help='--help 2>&1 | bat --language=help --style=plain'
+        alias -g -- --help='--help 2>&1 | "$bat" --language=help --style=plain'
     fi
-    help() { "$@" --help 2>&1 | bat --language=help --style=plain; }
-    tailf() { tail -f "$@" | bat --paging=never --language=log; }
-    batdiff() { git diff --name-only --relative --diff-filter=d | xargs bat --diff; }
+    help() { "$@" --help 2>&1 | "$bat" --language=help --style=plain; }
+    tailf() { tail -f "$@" | "$bat" --paging=never --language=log; }
+    batdiff() { git diff --name-only --relative --diff-filter=d | xargs "$bat" --diff; }
 fi
 
 # Usage exa instead of ls
@@ -266,7 +267,7 @@ if have "sgpt"; then
     GS() { sgpt --shell "$*"; }
     GC() { 
         echo ""
-        sgpt --code --no-md "$*" | bat --language=sh --paging=never --style=plain
+        sgpt --code --no-md "$*" | "$bat" --language=sh --paging=never --style=plain
         echo ""
     }
     alias GG="sgpt --repl temp"
