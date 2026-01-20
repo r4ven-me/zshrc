@@ -204,10 +204,16 @@ fi
 # Usage exa instead of ls
 # See more: https://r4ven.me/bat-exa-config
 if have "exa"; then
+    exa="exa"
+elif have "eza"; then
+    exa="eza"
+fi
+
+if have "$exa"; then
     if [[ -n "$DISPLAY" || $(tty) == /dev/pts* ]]; then # display icons if pseudo terminal
-        cmd_alias "ls" "exa" "--group" "--header" "--icons" "--time-style=long-iso"
+        cmd_alias "ls" "$exa" "--group" "--header" "--icons" "--time-style=long-iso"
     else
-        cmd_alias "ls" "exa" "--group" "--header" "--time-style=long-iso"
+        cmd_alias "ls" "$exa" "--group" "--header" "--time-style=long-iso"
     fi
     alias l="ls"
     alias ll="ls --long"
