@@ -369,6 +369,7 @@ compdef _cmd_completion cmd
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
     # =========================[ Line #1 ]=========================
     # os_icon               # os identifier
+    context                 # user@hostname
     dir                     # current directory
     vcs                     # git status
     # =========================[ Line #2 ]=========================
@@ -1331,7 +1332,7 @@ compdef _cmd_completion cmd
   # Don't show context unless running with privileges or in SSH.
   # Tip: Remove the next line to always show context.
   # Function to enable context
-  if [[ -z "$DISPLAY" && -n "$SSH_CONNECTION" ]]; then
+  if [[ -n "$DISPLAY" && -z "$SSH_CONNECTION" ]]; then
     typeset -g POWERLEVEL9K_CONTEXT_{DEFAULT,SUDO}_{CONTENT,VISUAL_IDENTIFIER}_EXPANSION=
   fi
 
