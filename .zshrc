@@ -173,6 +173,65 @@ zstyle ':completion:*' rehash true
 # Python
 cmd_alias "python" "python3"
 
+# Trash-cli — send `rm` deletions to the trash instead of removing them outright.
+# Only takes over `rm` if the tool is actually installed, since losing `rm`
+# entirely on a machine without trash-cli would be worse than not having this.
+# `rmf` bypasses the trash and calls the real `rm` for a permanent delete
+# (plain `\rm` won't do it — backslash only defeats aliases, not functions).
+_trash_put=()
+if have "trash-put"; then
+    _trash_put=("trash-put")
+elif have "trash"; then
+    _trash_put=("trash" "put")
+fi
+
+if (( ${#_trash_put} )); then
+    # Files/dirs over 1 GiB get a permanent-delete confirmation instead of
+    # being trashed silently — trash-cli just copies/moves them into
+    # ~/.local/share/Trash, and doing that with something huge is rarely
+    # what you actually meant to do.
+    rm() {
+        local -i threshold=$(( 1024 ** 3 ))  # 1 GiB
+        local -a flags=() paths=() small=()
+        local arg size reply
+
+        for arg in "$@"; do
+            if [[ "$arg" == -* ]]; then
+                flags+=("$arg")
+            else
+                paths+=("$arg")
+            fi
+        done
+
+        for arg in "${paths[@]}"; do
+            size=$(du -sb -- "$arg" 2>/dev/null | cut -f1)
+            if [[ -n "$size" ]] && (( size > threshold )); then
+                while true; do
+                    read "reply?'$arg' is $(du -sh -- "$arg" 2>/dev/null | cut -f1) (>1GB). Delete permanently instead of trash? [y/n]: "
+                    case "${reply:l}" in
+                        y|yes) command rm "${flags[@]}" -- "$arg"; break ;;
+                        n|no) command "${_trash_put[@]}" "${flags[@]}" -- "$arg"; break ;;
+                        *) print -u2 "Please answer y/yes or n/no." ;;
+                    esac
+                done
+            else
+                small+=("$arg")
+            fi
+        done
+
+        (( ${#small[@]} )) && command "${_trash_put[@]}" "${flags[@]}" "${small[@]}"
+    }
+
+    rmf() { command rm --recursive --force "$@"; }
+
+    # `rmf` is also the name of an old MH/nmh mail command ("remove folder"),
+    # and zsh's stock completion system autoloads that tool's completer for
+    # anything named `rmf` regardless of whether MH is installed — silently
+    # hijacking Tab away from plain file completion. Force it back to `_rm`'s.
+    (( $+functions[compdef] )) && compdef _rm rmf
+fi
+unset _trash_put
+
 # Network
 cmd_alias "p8" "ping" "-c3" "8.8.8.8"
 cmd_alias "ip" "ip" "--color"
