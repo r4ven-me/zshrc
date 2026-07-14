@@ -206,8 +206,9 @@ if (( ${#_trash_put} )); then
         for arg in "${paths[@]}"; do
             size=$(du -sb -- "$arg" 2>/dev/null | cut -f1)
             if [[ -n "$size" ]] && (( size > threshold )); then
+                local human=$(numfmt --to=iec --suffix=B -- "$size" 2>/dev/null)
                 while true; do
-                    read "reply?'$arg' is $(du -sh -- "$arg" 2>/dev/null | cut -f1) (>1GB). Delete permanently instead of trash? [y/n]: "
+                    read "reply?'$arg' is ${human:-$size bytes} (>1GB). Delete permanently instead of trash? [y/n]: "
                     case "${reply:l}" in
                         y|yes) command rm "${flags[@]}" -- "$arg"; break ;;
                         n|no) command "${_trash_put[@]}" "${flags[@]}" -- "$arg"; break ;;
@@ -230,7 +231,8 @@ if (( ${#_trash_put} )); then
     # hijacking Tab away from plain file completion. Force it back to `_rm`'s.
     (( $+functions[compdef] )) && compdef _rm rmf
 fi
-unset _trash_put
+# _trash_put stays set (not unset) — the rm/rmf closures above read it by name
+# every time they run, not just when they were defined.
 
 # Network
 cmd_alias "p8" "ping" "-c3" "8.8.8.8"
