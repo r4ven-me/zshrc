@@ -79,14 +79,23 @@ fi
 
 # Oh-my-zsh theme selection
 # Find more themes: https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-if [[ -n "$DISPLAY" || $(tty) == /dev/pts* ]] && have "git"; then
-    if [[ ! -d "${ZSH_CUSTOM}/themes/powerlevel10k" ]]; then
+# `git` is only needed to *clone* p10k, not to decide whether to use it — on a
+# freshly provisioned box the very first login can race with git still being
+# installed, and coupling both checks into one condition used to fall back to
+# dpoggi permanently even after git showed up (it only re-checked on the next
+# login because ZSH_THEME itself isn't re-evaluated mid-session).
+if [[ -n "$DISPLAY" || $(tty) == /dev/pts* ]]; then
+    if have "git" && [[ ! -d "${ZSH_CUSTOM}/themes/powerlevel10k" ]]; then
         git clone \
             https://github.com/romkatv/powerlevel10k.git \
             "${ZSH_CUSTOM}"/themes/powerlevel10k
     fi
-    # export VIRTUAL_ENV_DISABLE_PROMPT=1  # Disable default virtualenv prompt
-    ZSH_THEME="powerlevel10k/powerlevel10k"
+    if [[ -d "${ZSH_CUSTOM}/themes/powerlevel10k" ]]; then
+        # export VIRTUAL_ENV_DISABLE_PROMPT=1  # Disable default virtualenv prompt
+        ZSH_THEME="powerlevel10k/powerlevel10k"
+    else
+        ZSH_THEME="dpoggi"                 # p10k isn't on disk yet and couldn't be cloned (no git/network)
+    fi
 else
     ZSH_THEME="dpoggi"                     # Use the 'noicon' theme in other cases, e.g. in console (tty)
 fi
