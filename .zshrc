@@ -84,7 +84,11 @@ fi
 # installed, and coupling both checks into one condition used to fall back to
 # dpoggi permanently even after git showed up (it only re-checked on the next
 # login because ZSH_THEME itself isn't re-evaluated mid-session).
-if [[ -n "$DISPLAY" || $(tty) == /dev/pts* ]]; then
+# $TTY, not $(tty): p10k instant prompt redirects stdin to /dev/null for the
+# rest of .zshrc, so $(tty) says "not a tty" whenever the prompt cache is
+# active — which made this check flip to the fallback theme on every second
+# login. $TTY is set by zsh itself at startup, before any redirection.
+if [[ -n "$DISPLAY" || $TTY == /dev/pts* ]]; then
     if have "git" && [[ ! -d "${ZSH_CUSTOM}/themes/powerlevel10k" ]]; then
         git clone \
             https://github.com/romkatv/powerlevel10k.git \
@@ -324,7 +328,7 @@ elif have "eza"; then
 fi
 
 if have "$_exa"; then
-    if [[ -n "$DISPLAY" || $(tty) == /dev/pts* ]]; then # display icons if pseudo terminal
+    if [[ -n "$DISPLAY" || $TTY == /dev/pts* ]]; then # display icons if pseudo terminal ($TTY: see theme selection note)
         cmd_alias "ls" "$_exa" "--group" "--header" "--icons" "--time-style=long-iso"
     else
         cmd_alias "ls" "$_exa" "--group" "--header" "--time-style=long-iso"
@@ -452,25 +456,52 @@ _cmd_completion() {
 # Register the autocompletion function for the `cmd` command
 (( $+functions[compdef] )) && compdef _cmd_completion cmd
 
-# # Autocompletion for ansible
-# _get_ansible_hosts() {
-#     local IFS=$'\n'
-#     for host in $(grep -oP '^\s*\K\S+' ~/Ansible/inventory.yml | sort -u); do
-#         echo "$host"
-#     done
-# }
+# Autocompletion for ansible inventory hosts.
+#
+# Deliberately NOT `compdef ... ssh` — that would *replace* the stock
+# _ssh/_scp/_rsync completers and lose their option/file/user@host completion.
+# Instead the inventory is fed into the `hosts` zstyle, which those completers
+# already consult internally (via _hosts), so native completion stays intact
+# and simply gains the inventory entries as extra host candidates.
+_ansible_inventory_hosts() {
+    local inv="${ANSIBLE_INVENTORY:-$HOME/Ansible/inventory.yml}"
+    [[ -r "$inv" ]] || return 0
+    # YAML mapping keys with no inline value ("name:") = hosts and groups;
+    # structure keywords and ansible_* variables are filtered out.
+    # (For a 100%-correct parse swap this for `ansible-inventory --list`,
+    # at the cost of ~1s per completion.)
+    grep -oP '^\s*\K[^:#\s]+(?=:\s*$)' "$inv" 2>/dev/null \
+        | grep -vxE 'all|hosts|children|vars|ansible_.*' | sort -u
+}
 
-# _ansible_hosts_completion() {
-#     local -a hosts
-#     hosts=("${(f)$(_get_ansible_hosts)}")
-#     _values 'ansible hosts' $hosts
-# }
+if [[ -r "${ANSIBLE_INVENTORY:-$HOME/Ansible/inventory.yml}" ]]; then
+    # `zstyle -e` re-evaluates on every completion, so inventory edits are
+    # picked up live. Setting the style disables _hosts' own discovery, so
+    # ~/.ssh/config and known_hosts entries are re-added alongside.
+    zstyle -e ':completion:*:(ssh|scp|sftp|rsync):*' hosts 'reply=(
+        ${(f)"$(_ansible_inventory_hosts)"}
+        ${=${${${(M)${(f)"$(cat /dev/null ~/.ssh/config(N))"}:#(#i)Host *}#(#i)Host }:#*[*?]*}}
+        ${(@)${=${${(M)${(f)"$(cat /dev/null {/etc/ssh/ssh_,$HOME/.ssh/}known_hosts(N))"}:#[^|#]*}%%[[:space:]]*}//,/ }}
+    )'
 
-# compdef _ansible_hosts_completion ssh
-# compdef _ansible_hosts_completion scp
-# compdef _ansible_hosts_completion rsync
-# compdef _ansible_hosts_completion ansible
-# compdef _ansible_hosts_completion ansible-playbook
+    # ansible/ansible-playbook have no stock zsh completer here, so a small
+    # dedicated one clobbers nothing: offer hosts for `ansible`'s pattern
+    # argument and after -l/--limit; default (file) completion elsewhere,
+    # which is what ansible-playbook's playbook argument wants anyway.
+    _ansible_hosts_completion() {
+        local -a hosts
+        if [[ $words[CURRENT-1] == (-l|--limit) ]] ||
+           [[ $service == ansible && $CURRENT -eq 2 && $words[CURRENT] != -* ]]; then
+            hosts=( ${(f)"$(_ansible_inventory_hosts)"} )
+            if (( ${#hosts} )); then
+                _describe 'ansible hosts' hosts
+                return
+            fi
+        fi
+        _default
+    }
+    (( $+functions[compdef] )) && compdef _ansible_hosts_completion ansible ansible-playbook
+fi
 
 #============================================
 #                  PROMPT
