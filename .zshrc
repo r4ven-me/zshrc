@@ -298,7 +298,13 @@ fi
 # Usage bat instead of cat, less, man, --help, tail -f
 # See more: https://r4ven.me/bat-exa-config
 if have "$_bat"; then
-    # export COLORTERM="truecolor"
+    # bat renders the theme's exact RGB colors only when COLORTERM=truecolor;
+    # tmux panes and some login paths start without it, silently degrading the
+    # highlighting to a 256-color approximation. Restore it where the terminal
+    # is known to support truecolor (tmux has Tc enabled in tmux.conf).
+    if [[ -z "$COLORTERM" && ( -n "$TMUX" || "$TERM" == *-256color ) ]]; then
+        export COLORTERM="truecolor"
+    fi
     export BAT_THEME="Nord"
     # export BAT_THEME="gruvbox-dark"
     # less's default search-match highlight ("standout") is documented to not
@@ -386,6 +392,18 @@ fi
 if have "tmux"; then
     alias T="tmux attach -t Work || tmux new -s Work"
     alias TT="sudo tmux attach -t Work! || sudo tmux new -s Work!"
+fi
+
+# Atch
+if have "atch"; then
+    alias A="atch attach RAVEN || atch new RAVEN"
+fi
+
+# Terraform/OpenTofu
+if have "tofu"; then
+    alias t="tofu"
+elif have "terraform"; then
+    alias t="terraform"
 fi
 
 # ShellGPT 
